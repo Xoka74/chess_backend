@@ -1,11 +1,14 @@
 from datetime import timedelta
 from pathlib import Path
+import environ
+import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-$-#9dx^)*tl=pb1bk84ws%l+px92ru-@f_+uie2*$xy-+2#+))'
-
-DEBUG = True
+env = environ.Env()
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+SECRET_KEY = env('SECRET_KEY')
+DEBUG = env('DEBUG')
 
 ALLOWED_HOSTS = ['*']
 CSRF_TRUSTED_ORIGINS = ['https://5cf5-5-166-62-69.ngrok-free.app']
