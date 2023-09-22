@@ -1,0 +1,8 @@
+Django~=4.2.5
+channels~=4.0.0
+Chessnut~=0.3.1
+daphne==4.0.0
+djangorestframework~=3.14.0
+celery~=5.3.4
+PyJWT~=2.8.0
+asgiref~=3.7.2

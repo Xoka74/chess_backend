@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <form method="post" action="{% url 'profile' %}">
+        {% csrf_token %}
+        <table>
+            <tr>
+                <td>{{ form.username.label_tag }}</td>
+                <td>{{ form.username }}</td>
+            </tr>
+            <tr>
+                <td>{{ form.email.label_tag }}</td>
+                <td>{{ form.email }}</td>
+            </tr>
+            <tr>
+                <td>{{ form.first_name.label_tag }}</td>
+                <td>{{ form.first_name }}</td>
+            </tr>
+            <tr>
+                <td>Your role: </td>
+                {% if user.is_superuser %}
+                    <td>Superuser</td>
+                {% elif user.is_staff %}
+                    <td>Admin</td>
+                {% else %}
+                    <td>Customer</td>
+                {% endif %}
+            </tr>
+        </table>
+        <input type="submit" value="Save">
+        <input type="hidden" name="next" value="{{ next }}">
+    </form>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+    Trying to find opponent...
+{% endblock %}
+
+{% block scripts %}
+    <script>
+
+        const url = 'wss://'
+            + window.location.host
+            + '/ws/matchmaking/'
+            + '?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjk1NjE3NTQ5LCJpYXQiOjE2OTU0MDE1NDksImp0aSI6IjYxMTMzN2Y3MDkxNzRmODdiNzQ0MzI0ZTQ4MzA4MjI5IiwidXNlcl9pZCI6IjAwMDQ0YmMyLTk1N2UtNDhjYi04ZDAzLTU2NjZmYTZjNzI0NSJ9.9KbGFfSI-XYzGsBuJu17k0tP2iNsUKRtit8RgIbbn2o'
+        const ws = new WebSocket(url);
+        console.log(url)
+        ws.onopen = function (e) {
+            console.log('Chat socket connection opened!');
+            ws.send(JSON.stringify({
+                event_data: {
+                    message: "asdasdadadads"
+                }
+            }))
+
+        }
+
+        ws.onclose = function (e) {
+            console.error(`Chat socket closed due ${e.reason ?? 'no reason'}`);
+        }
+
+        ws.onmessage = function (e) {
+            let data = JSON.parse(e.data)
+            console.log(data)
+            let event_type = data.type;
+            let result = data.result_data;
+            if (event_type === 'match_found') {
+                window.location.replace(window.location.origin + '/chess/sessions/' + result.session_id);
+            }
+        }
+
+
+    </script>
+{% endblock %}

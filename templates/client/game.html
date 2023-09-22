@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block css %}
+    <link rel="stylesheet" href="{% static 'css/chessboard-1.0.0.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/session.css' %}">
+{% endblock %}
+
+
+{% block content %}
+    <body>
+    <div class="wrapper">
+        <div id="board" style="width: 400px"></div>
+        <div id="game_info">
+            <div id="button_container">
+                <button id="surrender_button">Surrender</button>
+            </div>
+            <div id="winner"></div>
+        </div>
+    </div>
+    </body>
+{% endblock %}
+
+{% block scripts %}
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+    <script src="{% static 'js/chessboard-1.0.0.min.js' %}"></script>
+
+    <script>
+
+        gameStatuses = {
+            Started: 0,
+            Check: 1,
+            Checkmate: 2,
+            Stalemate: 3,
+            Surrender: 4,
+        }
+
+
+        {#let moveSound = new Audio(`{% static 'sounds/move-self.mp3' %}`);#}
+        let winnerElement = document.getElementById("winner")
+        let surrenderButton = document.getElementById("surrender_button")
+
+        const sessionId = `{{ session.id }}`
+        const memberId = `{{ member.id }}`
+        let isWhite = `{{ member.is_white }}` === 'True';
+
+        const gameStatus = parseInt(`{{ session.status }}`)
+        let state = Object.keys(gameStatuses).find(key => gameStatuses[key] === gameStatus);
+
+        {% if session.winner %}
+            let isWhiteWinner = `{{ session.winner.is_white }}` === 'True'
+            winnerElement.innerHTML = `Winner: ${isWhiteWinner ? 'white' : 'black'}`
+        {% endif %}
+
+        let isDraggable = gameStatus === gameStatuses.Started && (`{{ session.is_white_turn }}` === `True`) === isWhite
+
+        handleGameStatus(gameStatus)
+
+        function onDragStart(source, piece) {
+
+        }
+
+        function handleGameStatus(gameStatus) {
+            if (gameStatus > gameStatuses.Check) {
+                isDraggable = false
+                let state = Object.keys(gameStatuses).find(key => gameStatuses[key] === gameStatus);
+                surrenderButton.style.display = 'none'
+            }
+        }
+
+        const config = {
+            dropOffBoard: 'snapback',
+            position: `{{ session.board }}`,
+            draggable: true,
+            onDragStart: onDragStart,
+            {% if not session.is_finished %}
+                onDrop: onDrop,
+
+            {% endif %}
+
+            orientation: isWhite ? 'white' : 'black',
+            pieceTheme: window.location.origin + '/static/img/chesspieces/wikipedia/{piece}.png'
+        };
+
+        const board = ChessBoard('board', config);
+
+        {% if not session.is_finished %}
+            const url = 'wss://'
+                + window.location.host
+                + '/ws/games/'
+                + sessionId
+                + '/?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjk1MjU5Nzg3LCJpYXQiOjE2OTUwNDM3ODcsImp0aSI6IjM5NjMxOTY3MjEwNDRlNjA4MTM4OWZkYjNjYzAzZTAwIiwidXNlcl9pZCI6Mn0.1sFMer7ctRTctgRahshtC_6vCb035pkqUHuCuqFRYeo'
+            console.log(url)
+            const ws = new WebSocket(url);
+
+            ws.onopen = function (e) {
+                console.log('Chat socket connection opened!');
+            }
+
+
+            ws.onclose = function (e) {
+                console.error('Chat socket closed unexpectedly');
+            }
+
+            function onDrop(source, target) {
+                ws.send(JSON.stringify({
+                    event_type: 'make_move',
+                    event_data: {
+                        move: source + target,
+                        member_id: memberId
+                    }
+                }))
+                return 'snapback'
+            }
+
+
+
+            surrenderButton.addEventListener('click', function () {
+                ws.send(JSON.stringify({
+                    event_type: 'surrender',
+                }))
+            })
+
+            ws.onmessage = function (e) {
+                let data = JSON.parse(e.data)
+                let event_type = data.type;
+                let result = data.result_data;
+                console.log(data)
+                if (event_type === "join_game") {
+                    isWhite = result.is_member_white
+                } else if (event_type === 'make_move') {
+                    let newBoard = result.board
+                    let gameStatus = result.game_status
+                    let isWhiteCurrentMove = newBoard.split(' ')[1] === 'w'
+                    board.position(newBoard)
+                    isDraggable = (isWhiteCurrentMove === isWhite)
+                    handleGameStatus(gameStatus)
+                    {#moveSound.play();#}
+                } else if (event_type === 'end_game') {
+                    let gameStatus = result.game_status
+                    let newBoard = result.board
+                    let isWhiteWinner = result['is_white_winner']
+                    winnerElement.innerHTML = `Winner: ${isWhiteWinner ? 'white' : 'black'}`
+                    board.position(newBoard)
+                    handleGameStatus(gameStatus)
+                    ws.close()
+                }
+            }
+        {% endif %}
+    </script>
+{% endblock %}
+

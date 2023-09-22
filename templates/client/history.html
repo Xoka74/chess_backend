@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block content %}
+    <div class="chess-board">
+        <div class="row">
+            <div class="col-12">
+                <table class="table table-bordered">
+                    <thead>
+                    <tr>
+                        <th scope="col">Id</th>
+                        <th scope="col">Creation date</th>
+                        <th scope="col">Ending date</th>
+                        <th scope="col">Status</th>
+                    </thead>
+                    <tbody>
+                    {% for session in sessions %}
+                        <tr>
+                            <td>{{ session.id }}</td>
+                            <td>{{ session.start_datetime }}</td>
+                            <td>{{ session.end_datetime }}</td>
+                            <td>{{ session.status }}</td>
+                            <td>
+
+                                <a href="{% url 'client-session' id=session.id %}">
+                                    <button type="button" class="btn btn-success">Enter</button>
+                                </a>
+
+                                <a href="{% url 'client-session-delete' id=session.id %}">
+                                    <button type="button" class="btn btn-danger">
+                                        Delete
+                                    </button>
+                                </a>
+
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}
